@@ -15,8 +15,10 @@ function performanceMiddleware(req, res, next) {
           // Record performance metrics
           performanceService.recordRequest(req, res, responseTime);
 
-          // Add performance headers
-          res.set('X-Response-Time', `${responseTime}ms`);
+          // Add performance headers only if headers haven't been sent
+          if (!res.headersSent) {
+               res.set('X-Response-Time', `${responseTime}ms`);
+          }
 
           // Call original end method
           originalEnd.apply(this, args);
