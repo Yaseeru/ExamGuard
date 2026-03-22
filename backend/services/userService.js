@@ -52,7 +52,7 @@ class UserService {
       */
      async getUsers(role = null) {
           try {
-               let query = { isActive: true };
+               let query = {};
 
                if (role) {
                     // Validate role
@@ -88,7 +88,7 @@ class UserService {
           try {
                const user = await User.findById(userId).select('-password');
 
-               if (!user || !user.isActive) {
+               if (!user) {
                     throw new Error('User not found');
                }
 
@@ -114,7 +114,7 @@ class UserService {
           try {
                const user = await User.findById(userId);
 
-               if (!user || !user.isActive) {
+               if (!user) {
                     throw new Error('User not found');
                }
 
@@ -162,7 +162,7 @@ class UserService {
      }
 
      /**
-      * Delete user (soft delete by setting isActive to false)
+      * Delete user (hard delete - permanently removes from database)
       * @param {string} userId - User ID
       * @returns {Object} Deletion result
       */
@@ -170,13 +170,12 @@ class UserService {
           try {
                const user = await User.findById(userId);
 
-               if (!user || !user.isActive) {
+               if (!user) {
                     throw new Error('User not found');
                }
 
-               // Soft delete by setting isActive to false
-               user.isActive = false;
-               await user.save();
+               // Hard delete - permanently remove from database
+               await User.findByIdAndDelete(userId);
 
                return {
                     success: true,
@@ -206,7 +205,6 @@ class UserService {
      async getUserStats() {
           try {
                const stats = await User.aggregate([
-                    { $match: { isActive: true } },
                     { $group: { _id: '$role', count: { $sum: 1 } } },
                     { $sort: { _id: 1 } }
                ]);

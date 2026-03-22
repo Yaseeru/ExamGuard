@@ -7,6 +7,7 @@ const {
      requireStudent,
      requireStudentOrLecturer
 } = require('../middleware/auth');
+const { cacheConfigs, createInvalidationMiddleware, invalidationPatterns } = require('../middleware/cache');
 
 const router = express.Router();
 
@@ -27,7 +28,7 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // GET /api/courses - Get courses based on user role
-router.get('/', [authenticateToken, requireStudentOrLecturer], async (req, res) => {
+router.get('/', [authenticateToken, requireStudentOrLecturer, cacheConfigs.courses], async (req, res) => {
      try {
           let result;
           if (req.user.role === 'Student') {
@@ -68,6 +69,7 @@ router.get('/', [authenticateToken, requireStudentOrLecturer], async (req, res) 
 router.post('/', [
      authenticateToken,
      requireLecturer,
+     createInvalidationMiddleware(invalidationPatterns.courseOperations),
      body('title').trim().isLength({ min: 3, max: 100 }).matches(/^[a-zA-Z0-9\s]+$/),
      body('description').trim().isLength({ min: 10, max: 500 }),
      body('capacity').isInt({ min: 1, max: 1000 })
@@ -98,6 +100,39 @@ router.post('/', [
                error: {
                     code: 'INTERNAL_SERVER_ERROR',
                     message: 'Failed to create course',
+                    timestamp: new Date().toISOString()
+               }
+          });
+     }
+});
+
+// GET /api/courses/enrolled - Get enrolled courses for students (MUST be before /:id route)
+router.get('/enrolled', [authenticateToken, requireStudent, cacheConfigs.courses], async (req, res) => {
+     try {
+          const result = await courseService.getEnrolledCourses(req.user.id);
+
+          if (!result.success) {
+               return res.status(400).json({
+                    error: {
+                         code: 'ENROLLED_COURSES_ERROR',
+                         message: result.error,
+                         timestamp: new Date().toISOString()
+                    }
+               });
+          }
+
+          res.json({
+               success: true,
+               courses: result.courses,
+               count: result.courses.length,
+               timestamp: new Date().toISOString()
+          });
+     } catch (error) {
+          console.error('Get enrolled courses error:', error);
+          res.status(500).json({
+               error: {
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to retrieve enrolled courses',
                     timestamp: new Date().toISOString()
                }
           });
@@ -145,40 +180,6 @@ router.post('/:id/enroll', [
      }
 });
 
-// GET /api/courses/enrolled - Get enrolled courses for students
-router.get('/enrolled', [authenticateToken, requireStudent], async (req, res) => {
-     try {
-          const result = await courseService.getEnrolledCourses(req.user.id);
-
-          if (!result.success) {
-               return res.status(400).json({
-                    error: {
-                         code: 'ENROLLED_COURSES_ERROR',
-                         message: result.error,
-                         timestamp: new Date().toISOString()
-                    }
-               });
-          }
-
-          res.json({
-               success: true,
-               courses: result.courses,
-               count: result.courses.length,
-               timestamp: new Date().toISOString()
-          });
-     } catch (error) {
-          console.error('Get enrolled courses error:', error);
-          res.status(500).json({
-               error: {
-                    code: 'INTERNAL_SERVER_ERROR',
-                    message: 'Failed to retrieve enrolled courses',
-                    timestamp: new Date().toISOString()
-               }
-          });
-     }
-});
-
-module.exports = router;
 // GET /api/courses/:id - Get course by ID
 router.get('/:id', [
      authenticateToken,
@@ -382,3 +383,6 @@ router.get('/:id/stats', [
           });
      }
 });
+
+
+module.exports = router;

@@ -3,7 +3,7 @@ import { useNavigate, Navigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
-import { Shield, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Shield, Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false)
@@ -11,7 +11,7 @@ const Login = () => {
   const { user, login } = useAuth()
   const navigate = useNavigate()
   
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { register, handleSubmit, formState: { errors }, setError } = useForm()
 
   // Redirect if already logged in
   if (user) {
@@ -26,10 +26,20 @@ const Login = () => {
         toast.success('Login successful!')
         navigate('/dashboard')
       } else {
+        // Set form-level error for better UX
+        setError('root', { 
+          type: 'manual', 
+          message: result.error 
+        })
         toast.error(result.error)
       }
     } catch (error) {
-      toast.error('An unexpected error occurred')
+      const errorMessage = 'An unexpected error occurred. Please try again.'
+      setError('root', { 
+        type: 'manual', 
+        message: errorMessage 
+      })
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -52,6 +62,16 @@ const Login = () => {
 
         <div className="card">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            {/* Form-level error display */}
+            {errors.root && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                  <p className="text-sm text-red-700">{errors.root.message}</p>
+                </div>
+              </div>
+            )}
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
@@ -69,8 +89,9 @@ const Login = () => {
                     }
                   })}
                   type="email"
-                  className="input-field pl-10"
+                  className={`input-field pl-10 ${errors.email ? 'border-red-300 focus:ring-red-500' : ''}`}
                   placeholder="Enter your email"
+                  disabled={isLoading}
                 />
               </div>
               {errors.email && (
@@ -95,13 +116,15 @@ const Login = () => {
                     }
                   })}
                   type={showPassword ? 'text' : 'password'}
-                  className="input-field pl-10 pr-10"
+                  className={`input-field pl-10 pr-10 ${errors.password ? 'border-red-300 focus:ring-red-500' : ''}`}
                   placeholder="Enter your password"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5 text-gray-400" />
@@ -132,13 +155,13 @@ const Login = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 mb-2">
               Demo Credentials:
             </p>
-            <div className="mt-2 text-xs text-gray-500 space-y-1">
-              <div>Admin: admin@examguard.com / admin123</div>
-              <div>Lecturer: lecturer@examguard.com / lecturer123</div>
-              <div>Student: student@examguard.com / student123</div>
+            <div className="text-xs text-gray-500 space-y-1 bg-gray-50 p-3 rounded-lg">
+              <div><strong>Admin:</strong> admin@examguard.com / admin123</div>
+              <div><strong>Lecturer:</strong> lecturer@examguard.com / lecturer123</div>
+              <div><strong>Student:</strong> student@examguard.com / student123</div>
             </div>
           </div>
         </div>

@@ -92,7 +92,7 @@ const Home = () => {
               Join educational institutions worldwide in maintaining academic integrity.
             </p>
             <Link to="/login" className="bg-white text-primary-600 hover:bg-gray-100 font-medium py-3 px-8 rounded-lg transition-colors duration-200">
-              Start Your Free Trial
+              Get Started Now
             </Link>
           </div>
         </div>

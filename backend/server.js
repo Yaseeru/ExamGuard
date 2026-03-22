@@ -1,93 +1,71 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 require('dotenv').config();
+const app = require('./app');
+const databaseConfig = require('./config/database');
 
-const app = express();
-
-// Security middleware
-app.use(helmet());
-
-// Rate limiting
-const limiter = rateLimit({
-     windowMs: 15 * 60 * 1000, // 15 minutes
-     max: 100, // limit each IP to 100 requests per windowMs
-     message: 'Too many requests from this IP, please try again later.'
-});
-app.use(limiter);
-
-// CORS configuration
-app.use(cors({
-     origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-     credentials: true
-}));
-
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-
-// MongoDB connection
-const connectDB = async () => {
+// Connect to database using the enhanced configuration
+const initializeDatabase = async () => {
      try {
-          const conn = await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/examguard', {
-               useNewUrlParser: true,
-               useUnifiedTopology: true,
-          });
-          console.log(`MongoDB Connected: ${conn.connection.host}`);
+          await databaseConfig.connect();
+
+          // Create indexes for performance optimization
+          await databaseConfig.createIndexes();
+
+          // Validate database setup
+          const validation = await databaseConfig.validateDatabase();
+          if (validation.isValid) {
+               console.log('✅ Database validation successful');
+               console.log(`📊 Collections: ${validation.collections.join(', ')}`);
+          } else {
+               console.warn('⚠️  Database validation issues:', validation.error);
+          }
      } catch (error) {
-          console.error('Database connection error:', error);
+          console.error('❌ Database initialization failed:', error);
           process.exit(1);
      }
 };
 
-// Connect to database
-connectDB();
+// Initialize database
+initializeDatabase();
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-     res.json({
-          status: 'OK',
-          message: 'ExamGuard API is running',
-          timestamp: new Date().toISOString()
-     });
-});
+// Health check endpoint (handled by app.js)
 
-// API routes will be added here
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/courses', require('./routes/courses'));
-// app.use('/api/exams', require('./routes/exams'));
-// app.use('/api/exam-attempts', require('./routes/examAttempts'));
+// API routes (handled by app.js)
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-     console.error(err.stack);
-     res.status(500).json({
-          error: {
-               code: 'INTERNAL_SERVER_ERROR',
-               message: 'Something went wrong!',
-               timestamp: new Date().toISOString()
-          }
-     });
-});
+// Error handling middleware (handled by app.js)
 
-// 404 handler
-app.use('*', (req, res) => {
-     res.status(404).json({
-          error: {
-               code: 'NOT_FOUND',
-               message: 'API endpoint not found',
-               timestamp: new Date().toISOString()
-          }
-     });
-});
+// 404 handler (handled by app.js)
 
 const PORT = process.env.PORT || 5000;
 
+// Start timer service for exam auto-submission
+const timerService = require('./services/timerService');
+const sessionService = require('./services/sessionService');
+
 app.listen(PORT, () => {
      console.log(`Server running on port ${PORT}`);
+
+     // Start timer service after server starts
+     timerService.start();
+
+     // Session service starts automatically via constructor
+     console.log('Session service initialized');
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+     console.log('SIGTERM received, shutting down gracefully');
+     timerService.stop();
+     sessionService.shutdown();
+     await databaseConfig.disconnect();
+     process.exit(0);
+});
+
+process.on('SIGINT', async () => {
+     console.log('SIGINT received, shutting down gracefully');
+     timerService.stop();
+     sessionService.shutdown();
+     await databaseConfig.disconnect();
+     process.exit(0);
 });
 
 module.exports = app;

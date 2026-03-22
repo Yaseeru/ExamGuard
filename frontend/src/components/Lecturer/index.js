@@ -1,0 +1,7 @@
+export { default as CourseManagement } from './CourseManagement'
+export { default as CourseForm } from './CourseForm'
+export { default as CourseDetails } from './CourseDetails'
+export { default as ExamManagement } from './ExamManagement'
+export { default as ExamForm } from './ExamForm'
+export { default as ExamDetails } from './ExamDetails'
+export { default as ResultsAnalytics } from './ResultsAnalytics'

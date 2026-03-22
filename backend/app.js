@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { globalErrorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { sendSuccess } = require('./utils/responseFormatter');
+const { performanceMiddleware } = require('./middleware/performance');
 
 const app = express();
 
@@ -11,8 +14,10 @@ app.use(helmet());
 // Rate limiting
 const limiter = rateLimit({
      windowMs: 15 * 60 * 1000, // 15 minutes
-     max: 100, // limit each IP to 100 requests per windowMs
-     message: 'Too many requests from this IP, please try again later.'
+     max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for development
+     message: 'Too many requests from this IP, please try again later.',
+     standardHeaders: true,
+     legacyHeaders: false,
 });
 app.use(limiter);
 
@@ -26,41 +31,36 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Performance monitoring middleware
+app.use(performanceMiddleware);
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-     res.json({
+     sendSuccess(res, {
           status: 'OK',
           message: 'ExamGuard API is running',
-          timestamp: new Date().toISOString()
-     });
+          version: '1.0.0',
+          environment: process.env.NODE_ENV || 'development'
+     }, 'API is healthy');
 });
+
+// Health check routes (detailed monitoring)
+app.use('/health', require('./routes/health'));
 
 // API routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/courses', require('./routes/courses'));
+app.use('/api/exams', require('./routes/exams'));
+app.use('/api/exam-attempts', require('./routes/examAttempts'));
+app.use('/api/sessions', require('./routes/sessions'));
+app.use('/api/results', require('./routes/results'));
+app.use('/api/performance', require('./routes/performance'));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-     console.error(err.stack);
-     res.status(500).json({
-          error: {
-               code: 'INTERNAL_SERVER_ERROR',
-               message: 'Something went wrong!',
-               timestamp: new Date().toISOString()
-          }
-     });
-});
+// 404 handler for undefined routes
+app.use('*', notFoundHandler);
 
-// 404 handler
-app.use('*', (req, res) => {
-     res.status(404).json({
-          error: {
-               code: 'NOT_FOUND',
-               message: 'API endpoint not found',
-               timestamp: new Date().toISOString()
-          }
-     });
-});
+// Global error handling middleware
+app.use(globalErrorHandler);
 
 module.exports = app;

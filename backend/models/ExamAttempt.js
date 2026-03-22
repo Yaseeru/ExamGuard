@@ -28,7 +28,30 @@ const violationSchema = new mongoose.Schema({
           type: String,
           required: [true, 'Violation type is required'],
           enum: {
-               values: ['tab_switch', 'copy_attempt', 'paste_attempt', 'right_click', 'focus_loss', 'suspicious_activity'],
+               values: [
+                    'tab_switch',
+                    'window_blur',
+                    'copy_attempt',
+                    'paste_attempt',
+                    'cut_attempt',
+                    'select_all_attempt',
+                    'right_click',
+                    'right_mouse_button',
+                    'drag_attempt',
+                    'clipboard_copy',
+                    'clipboard_paste',
+                    'clipboard_cut',
+                    'dev_tools_attempt',
+                    'dev_tools_detected',
+                    'refresh_attempt',
+                    'print_screen_attempt',
+                    'alt_tab_attempt',
+                    'reopen_tab_attempt',
+                    'new_tab_attempt',
+                    'new_window_attempt',
+                    'focus_loss',
+                    'suspicious_activity'
+               ],
                message: 'Invalid violation type'
           }
      },

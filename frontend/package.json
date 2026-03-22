@@ -6,9 +6,13 @@
      "scripts": {
           "dev": "vite",
           "build": "vite build",
+          "build:production": "vite build --mode production",
           "preview": "vite preview",
           "test": "vitest",
-          "test:ui": "vitest --ui"
+          "test:ui": "vitest --ui",
+          "test:e2e": "vitest run src/test/e2e/",
+          "test:system": "npm run test:e2e",
+          "analyze": "vite build --mode production && npx vite-bundle-analyzer dist/stats.html"
      },
      "dependencies": {
           "react": "^18.2.0",
@@ -32,6 +36,7 @@
           "@testing-library/react": "^13.4.0",
           "@testing-library/jest-dom": "^6.1.4",
           "@testing-library/user-event": "^14.5.1",
-          "jsdom": "^22.1.0"
+          "jsdom": "^22.1.0",
+          "terser": "^5.19.4"
      }
 }

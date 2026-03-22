@@ -1,7 +1,10 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
+const { body } = require('express-validator');
 const authService = require('../services/authService');
 const { authenticateToken } = require('../middleware/auth');
+const { sendSuccess, sendError, handleServiceResponse, HTTP_STATUS, ERROR_CODES } = require('../utils/responseFormatter');
+const { ValidationRules } = require('../utils/validators');
+const { createValidationChain, sanitizeRequestBody } = require('../middleware/validation');
 
 const router = express.Router();
 
@@ -11,64 +14,42 @@ const router = express.Router();
  * @access  Public
  */
 router.post('/login', [
-     // Validation middleware
-     body('email')
-          .isEmail()
-          .normalizeEmail()
-          .withMessage('Please provide a valid email address'),
-     body('password')
-          .notEmpty()
-          .withMessage('Password is required')
-          .isLength({ min: 8 })
-          .withMessage('Password must be at least 8 characters long')
+     sanitizeRequestBody(['email', 'password']),
+     ...createValidationChain([
+          ValidationRules.userEmail(),
+          body('password')
+               .notEmpty()
+               .withMessage('Password is required')
+               .isLength({ min: 1, max: 128 })
+               .withMessage('Password must not exceed 128 characters')
+     ])
 ], async (req, res) => {
      try {
-          // Check validation errors
-          const errors = validationResult(req);
-          if (!errors.isEmpty()) {
-               return res.status(400).json({
-                    error: {
-                         code: 'VALIDATION_ERROR',
-                         message: 'Invalid input data',
-                         details: errors.array(),
-                         timestamp: new Date().toISOString()
-                    }
-               });
-          }
-
           const { email, password } = req.body;
 
           // Authenticate user
           const result = await authService.authenticateUser(email, password);
 
           if (!result.success) {
-               return res.status(401).json({
-                    error: {
-                         code: 'AUTHENTICATION_FAILED',
-                         message: result.error,
-                         timestamp: new Date().toISOString()
-                    }
-               });
+               // Map specific authentication errors to appropriate status codes
+               if (result.error.includes('Invalid credentials')) {
+                    return sendError(res, 'INVALID_CREDENTIALS', result.error, null, HTTP_STATUS.UNAUTHORIZED);
+               } else if (result.error.includes('deactivated')) {
+                    return sendError(res, 'ACCOUNT_DEACTIVATED', result.error, null, HTTP_STATUS.FORBIDDEN);
+               } else {
+                    return sendError(res, 'AUTHENTICATION_FAILED', result.error, null, HTTP_STATUS.UNAUTHORIZED);
+               }
           }
 
           // Return success response
-          res.json({
-               success: true,
-               message: 'Login successful',
+          sendSuccess(res, {
                token: result.token,
-               user: result.user,
-               timestamp: new Date().toISOString()
-          });
+               user: result.user
+          }, 'Login successful', HTTP_STATUS.OK);
 
      } catch (error) {
           console.error('Login error:', error);
-          res.status(500).json({
-               error: {
-                    code: 'INTERNAL_SERVER_ERROR',
-                    message: 'Login failed due to server error',
-                    timestamp: new Date().toISOString()
-               }
-          });
+          sendError(res, 'INTERNAL_SERVER_ERROR', 'Login failed due to server error', null, HTTP_STATUS.INTERNAL_SERVER_ERROR);
      }
 });
 
@@ -81,21 +62,14 @@ router.post('/validate', authenticateToken, async (req, res) => {
      try {
           // Token is already validated by middleware
           // User data is available in req.user
-          res.json({
+          sendSuccess(res, {
                valid: true,
-               user: req.user,
-               timestamp: new Date().toISOString()
-          });
+               user: req.user
+          }, 'Token is valid', HTTP_STATUS.OK);
 
      } catch (error) {
           console.error('Token validation error:', error);
-          res.status(500).json({
-               error: {
-                    code: 'INTERNAL_SERVER_ERROR',
-                    message: 'Token validation failed',
-                    timestamp: new Date().toISOString()
-               }
-          });
+          sendError(res, 'INTERNAL_SERVER_ERROR', 'Token validation failed', null, HTTP_STATUS.INTERNAL_SERVER_ERROR);
      }
 });
 
@@ -106,21 +80,13 @@ router.post('/validate', authenticateToken, async (req, res) => {
  */
 router.get('/me', authenticateToken, async (req, res) => {
      try {
-          res.json({
-               success: true,
-               user: req.user,
-               timestamp: new Date().toISOString()
-          });
+          sendSuccess(res, {
+               user: req.user
+          }, 'User profile retrieved successfully', HTTP_STATUS.OK);
 
      } catch (error) {
           console.error('Get profile error:', error);
-          res.status(500).json({
-               error: {
-                    code: 'INTERNAL_SERVER_ERROR',
-                    message: 'Failed to retrieve user profile',
-                    timestamp: new Date().toISOString()
-               }
-          });
+          sendError(res, 'INTERNAL_SERVER_ERROR', 'Failed to retrieve user profile', null, HTTP_STATUS.INTERNAL_SERVER_ERROR);
      }
 });
 
@@ -133,21 +99,11 @@ router.post('/logout', authenticateToken, async (req, res) => {
      try {
           // JWT tokens are stateless, so logout is handled client-side
           // This endpoint confirms successful logout
-          res.json({
-               success: true,
-               message: 'Logout successful',
-               timestamp: new Date().toISOString()
-          });
+          sendSuccess(res, {}, 'Logout successful', HTTP_STATUS.OK);
 
      } catch (error) {
           console.error('Logout error:', error);
-          res.status(500).json({
-               error: {
-                    code: 'INTERNAL_SERVER_ERROR',
-                    message: 'Logout failed',
-                    timestamp: new Date().toISOString()
-               }
-          });
+          sendError(res, 'INTERNAL_SERVER_ERROR', 'Logout failed', null, HTTP_STATUS.INTERNAL_SERVER_ERROR);
      }
 });
 

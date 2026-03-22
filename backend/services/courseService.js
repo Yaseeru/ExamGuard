@@ -14,7 +14,7 @@ class CourseService {
 
                // Verify lecturer exists and has correct role
                const lecturer = await User.findById(lecturerId);
-               if (!lecturer || lecturer.role !== 'Lecturer' || !lecturer.isActive) {
+               if (!lecturer || lecturer.role !== 'Lecturer') {
                     throw new Error('Invalid lecturer ID or lecturer not found');
                }
 
@@ -243,7 +243,7 @@ class CourseService {
           try {
                // Verify student exists and has correct role
                const student = await User.findById(studentId);
-               if (!student || student.role !== 'Student' || !student.isActive) {
+               if (!student || student.role !== 'Student') {
                     throw new Error('Invalid student ID or student not found');
                }
 
