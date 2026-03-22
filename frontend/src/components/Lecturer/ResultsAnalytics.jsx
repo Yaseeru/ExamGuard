@@ -58,36 +58,76 @@ const ResultsAnalytics = () => {
   const fetchResults = async () => {
     setLoading(true)
     try {
-      let url = '/results'
-      const params = new URLSearchParams()
+      let response;
       
       if (selectedExam) {
-        url = `/results/exam/${selectedExam}`
-      } else if (selectedCourse) {
-        params.append('courseId', selectedCourse)
-        url = `/results?${params.toString()}`
+        // Get results for specific exam
+        response = await api.get(`/results/exam/${selectedExam}`)
+        const examData = response.data
+        
+        // Format the response to match expected structure
+        setResults(examData.results || [])
+        
+        // Use exam statistics if available
+        if (examData.statistics) {
+          setStatistics({
+            totalAttempts: examData.statistics.totalAttempts || 0,
+            averageScore: examData.statistics.averagePercentage || 0,
+            completionRate: examData.statistics.totalAttempts > 0 
+              ? ((examData.statistics.totalAttempts - (examData.statistics.autoSubmittedCount || 0)) / examData.statistics.totalAttempts) * 100 
+              : 0,
+            violationCount: examData.statistics.totalViolations || 0
+          })
+        }
+      } else {
+        // Get all results for lecturer
+        response = await api.get('/results/lecturer')
+        const summary = response.data.summary || []
+        
+        // Filter by course if selected
+        let filteredSummary = summary
+        if (selectedCourse) {
+          filteredSummary = summary.filter(exam => {
+            const course = courses.find(c => c.title === exam.course)
+            return course && course._id === selectedCourse
+          })
+        }
+        
+        // Calculate aggregate statistics
+        const totalAttempts = filteredSummary.reduce((sum, exam) => sum + exam.totalAttempts, 0)
+        const totalViolations = filteredSummary.reduce((sum, exam) => sum + exam.totalViolations, 0)
+        const avgScore = filteredSummary.length > 0
+          ? filteredSummary.reduce((sum, exam) => sum + exam.averagePercentage, 0) / filteredSummary.length
+          : 0
+        
+        setStatistics({
+          totalAttempts,
+          averageScore: avgScore,
+          completionRate: 100, // Summary only shows completed attempts
+          violationCount: totalViolations
+        })
+        
+        // Convert summary to results format for display
+        // We need to fetch individual exam attempts
+        if (filteredSummary.length > 0) {
+          const allResults = []
+          for (const examSummary of filteredSummary) {
+            try {
+              const examResponse = await api.get(`/results/exam/${examSummary.examId}`)
+              allResults.push(...(examResponse.data.results || []))
+            } catch (error) {
+              console.error(`Error fetching results for exam ${examSummary.examId}:`, error)
+            }
+          }
+          setResults(allResults)
+        } else {
+          setResults([])
+        }
       }
-
-      const response = await api.get(url)
-      const attempts = response.data.attempts || []
-      setResults(attempts)
-      
-      // Calculate statistics
-      const completedAttempts = attempts.filter(a => a.status === 'submitted' || a.status === 'auto_submitted')
-      const totalViolations = attempts.reduce((sum, attempt) => sum + (attempt.violationCount || 0), 0)
-      const averageScore = completedAttempts.length > 0 
-        ? completedAttempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0) / completedAttempts.length 
-        : 0
-
-      setStatistics({
-        totalAttempts: attempts.length,
-        averageScore: averageScore,
-        completionRate: attempts.length > 0 ? (completedAttempts.length / attempts.length) * 100 : 0,
-        violationCount: totalViolations
-      })
     } catch (error) {
       console.error('Error fetching results:', error)
       toast.error('Failed to load results')
+      setResults([])
     } finally {
       setLoading(false)
     }
@@ -278,29 +318,29 @@ const ResultsAnalytics = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {results.map((result) => (
-                  <tr key={result._id} className="hover:bg-gray-50">
+                  <tr key={result.attemptId || result._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {result.studentId?.name || 'Unknown Student'}
+                        {result.student?.name || result.studentId?.name || 'Unknown Student'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {result.studentId?.email || 'No email'}
+                        {result.student?.email || result.studentId?.email || 'No email'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {result.examId?.title || 'Unknown Exam'}
+                        {result.exam?.title || result.examId?.title || 'Unknown Exam'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {result.examId?.courseId?.title || 'Unknown Course'}
+                        {result.exam?.course || result.examId?.courseId?.title || 'Unknown Course'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm font-medium ${getScoreColor(result.score || 0)}`}>
-                        {result.score !== undefined ? `${result.score.toFixed(1)}%` : 'N/A'}
+                      <div className={`text-sm font-medium ${getScoreColor(result.percentage || result.score || 0)}`}>
+                        {result.percentage !== undefined ? `${result.percentage}%` : result.score !== undefined ? `${result.score.toFixed(1)}%` : 'N/A'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {result.totalQuestions ? `${result.answers?.length || 0}/${result.totalQuestions}` : 'N/A'}
+                        {result.answeredQuestions !== undefined && result.totalQuestions ? `${result.answeredQuestions}/${result.totalQuestions}` : result.answers?.length && result.totalQuestions ? `${result.answers.length}/${result.totalQuestions}` : 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
