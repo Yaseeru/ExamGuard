@@ -15,16 +15,6 @@ app.use(helmet({
      crossOriginEmbedderPolicy: false
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-     windowMs: 15 * 60 * 1000, // 15 minutes
-     max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Higher limit for development
-     message: 'Too many requests from this IP, please try again later.',
-     standardHeaders: true,
-     legacyHeaders: false,
-});
-app.use(limiter);
-
 // CORS configuration
 app.use(cors({
      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -34,6 +24,51 @@ app.use(cors({
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Serve frontend static files in production BEFORE rate limiting
+if (process.env.NODE_ENV === 'production') {
+     const fs = require('fs');
+     const frontendPath = path.join(__dirname, '../frontend/dist');
+     const indexPath = path.join(frontendPath, 'index.html');
+
+     console.log('Production mode: Checking frontend build...');
+     console.log('Frontend path:', frontendPath);
+     console.log('Index.html path:', indexPath);
+
+     // Check if frontend build exists
+     if (fs.existsSync(frontendPath)) {
+          console.log('✅ Frontend dist folder found');
+
+          if (fs.existsSync(indexPath)) {
+               console.log('✅ index.html found');
+
+               // Serve static files with caching
+               app.use(express.static(frontendPath, {
+                    maxAge: '1d', // Cache static assets for 1 day
+                    etag: true,
+                    lastModified: true
+               }));
+          } else {
+               console.error('❌ index.html NOT found at:', indexPath);
+          }
+     } else {
+          console.error('❌ Frontend dist folder NOT found at:', frontendPath);
+     }
+}
+
+// Rate limiting - ONLY for API routes
+const limiter = rateLimit({
+     windowMs: 15 * 60 * 1000, // 15 minutes
+     max: process.env.NODE_ENV === 'production' ? 500 : 1000, // Increased for production
+     message: 'Too many requests from this IP, please try again later.',
+     standardHeaders: true,
+     legacyHeaders: false,
+     skip: (req) => {
+          // Skip rate limiting for static files
+          return !req.path.startsWith('/api') && !req.path.startsWith('/health');
+     }
+});
+app.use(limiter);
 
 // Performance monitoring middleware
 app.use(performanceMiddleware);
@@ -61,56 +96,20 @@ app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/results', require('./routes/results'));
 app.use('/api/performance', require('./routes/performance'));
 
-// Serve frontend static files in production
+// Handle React routing - send all non-API requests to index.html
 if (process.env.NODE_ENV === 'production') {
-     const fs = require('fs');
-     const frontendPath = path.join(__dirname, '../frontend/dist');
-     const indexPath = path.join(frontendPath, 'index.html');
-
-     console.log('Production mode: Checking frontend build...');
-     console.log('Frontend path:', frontendPath);
-     console.log('Index.html path:', indexPath);
-
-     // Check if frontend build exists
-     if (fs.existsSync(frontendPath)) {
-          console.log('✅ Frontend dist folder found');
-
-          if (fs.existsSync(indexPath)) {
-               console.log('✅ index.html found');
-
-               // Serve static files
-               app.use(express.static(frontendPath));
-
-               // Handle React routing - send all non-API requests to index.html
-               app.get('*', (req, res) => {
-                    res.sendFile(indexPath, (err) => {
-                         if (err) {
-                              console.error('Error sending index.html:', err);
-                              res.status(500).json({
-                                   error: 'Failed to load application',
-                                   message: 'Frontend build not found or corrupted'
-                              });
-                         }
-                    });
-               });
-          } else {
-               console.error('❌ index.html NOT found at:', indexPath);
-               app.get('*', (req, res) => {
+     const indexPath = path.join(__dirname, '../frontend/dist/index.html');
+     app.get('*', (req, res) => {
+          res.sendFile(indexPath, (err) => {
+               if (err) {
+                    console.error('Error sending index.html:', err);
                     res.status(500).json({
-                         error: 'Frontend build incomplete',
-                         message: 'index.html not found. Please rebuild the frontend.'
+                         error: 'Failed to load application',
+                         message: 'Frontend build not found or corrupted'
                     });
-               });
-          }
-     } else {
-          console.error('❌ Frontend dist folder NOT found at:', frontendPath);
-          app.get('*', (req, res) => {
-               res.status(500).json({
-                    error: 'Frontend not built',
-                    message: 'Frontend dist folder not found. Please build the frontend first.'
-               });
+               }
           });
-     }
+     });
 } else {
      // 404 handler for undefined routes in development
      app.use('*', notFoundHandler);
