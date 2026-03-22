@@ -2,14 +2,18 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const { globalErrorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { sendSuccess } = require('./utils/responseFormatter');
 const { performanceMiddleware } = require('./middleware/performance');
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+// Security middleware - Configure helmet for serving frontend
+app.use(helmet({
+     contentSecurityPolicy: false, // Disable CSP for React app
+     crossOriginEmbedderPolicy: false
+}));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -57,8 +61,21 @@ app.use('/api/sessions', require('./routes/sessions'));
 app.use('/api/results', require('./routes/results'));
 app.use('/api/performance', require('./routes/performance'));
 
-// 404 handler for undefined routes
-app.use('*', notFoundHandler);
+// Serve frontend static files in production
+if (process.env.NODE_ENV === 'production') {
+     const frontendPath = path.join(__dirname, '../frontend/dist');
+
+     // Serve static files
+     app.use(express.static(frontendPath));
+
+     // Handle React routing - send all non-API requests to index.html
+     app.get('*', (req, res) => {
+          res.sendFile(path.join(frontendPath, 'index.html'));
+     });
+} else {
+     // 404 handler for undefined routes in development
+     app.use('*', notFoundHandler);
+}
 
 // Global error handling middleware
 app.use(globalErrorHandler);
