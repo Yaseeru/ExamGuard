@@ -206,6 +206,11 @@ class ResultsService {
                          name: attempt.studentId.name,
                          email: attempt.studentId.email
                     },
+                    exam: {
+                         id: exam._id,
+                         title: exam.title,
+                         course: exam.courseId.title
+                    },
                     score: attempt.score,
                     totalQuestions: attempt.totalQuestions,
                     answeredQuestions: attempt.answers.length,

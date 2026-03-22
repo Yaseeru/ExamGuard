@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { BarChart3, Users, AlertTriangle, FileText, Eye, Calendar, Clock } from 'lucide-react'
+import { BarChart3, Users, AlertTriangle, FileText, Calendar, Clock } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import api from '../../utils/api'
 
@@ -311,9 +311,6 @@ const ResultsAnalytics = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Submitted
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -369,16 +366,6 @@ const ResultsAnalytics = () => {
                       ) : (
                         'Not submitted'
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => {/* TODO: Implement detailed view */}}
-                        className="text-blue-600 hover:text-blue-900 inline-flex items-center"
-                        title="View detailed results"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </button>
                     </td>
                   </tr>
                 ))}
