@@ -29,7 +29,12 @@ const EnrolledCourses = () => {
           const attemptsResponse = await api.get('/exam-attempts')
           const attempts = attemptsResponse.data.attempts || []
           
-          const courseAttempts = attempts.filter(attempt => 
+          // Filter out attempts with null/deleted exams
+          const validAttempts = attempts.filter(attempt => 
+            attempt.examId && attempt.examId._id
+          )
+          
+          const courseAttempts = validAttempts.filter(attempt => 
             exams.some(exam => exam._id === attempt.examId._id)
           )
           
