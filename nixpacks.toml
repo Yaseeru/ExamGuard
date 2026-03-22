@@ -2,10 +2,23 @@
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["cd backend && npm ci --production", "cd frontend && npm ci"]
+cmds = [
+     "echo '=== Installing backend dependencies ==='",
+     "cd backend && npm ci --production",
+     "echo '=== Installing frontend dependencies ==='",
+     "cd frontend && npm ci"
+]
 
 [phases.build]
-cmds = ["cd frontend && npm run build"]
+cmds = [
+     "echo '=== Building frontend ==='",
+     "cd frontend && npm run build",
+     "echo '=== Verifying frontend build ==='",
+     "ls -la frontend/dist",
+     "echo '=== Frontend build complete ==='",
+     "echo '=== Moving frontend build to backend ==='",
+     "ls -la backend/../frontend/dist"
+]
 
 [start]
 cmd = "cd backend && node server.js"

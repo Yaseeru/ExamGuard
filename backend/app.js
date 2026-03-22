@@ -63,15 +63,54 @@ app.use('/api/performance', require('./routes/performance'));
 
 // Serve frontend static files in production
 if (process.env.NODE_ENV === 'production') {
+     const fs = require('fs');
      const frontendPath = path.join(__dirname, '../frontend/dist');
+     const indexPath = path.join(frontendPath, 'index.html');
 
-     // Serve static files
-     app.use(express.static(frontendPath));
+     console.log('Production mode: Checking frontend build...');
+     console.log('Frontend path:', frontendPath);
+     console.log('Index.html path:', indexPath);
 
-     // Handle React routing - send all non-API requests to index.html
-     app.get('*', (req, res) => {
-          res.sendFile(path.join(frontendPath, 'index.html'));
-     });
+     // Check if frontend build exists
+     if (fs.existsSync(frontendPath)) {
+          console.log('✅ Frontend dist folder found');
+
+          if (fs.existsSync(indexPath)) {
+               console.log('✅ index.html found');
+
+               // Serve static files
+               app.use(express.static(frontendPath));
+
+               // Handle React routing - send all non-API requests to index.html
+               app.get('*', (req, res) => {
+                    res.sendFile(indexPath, (err) => {
+                         if (err) {
+                              console.error('Error sending index.html:', err);
+                              res.status(500).json({
+                                   error: 'Failed to load application',
+                                   message: 'Frontend build not found or corrupted'
+                              });
+                         }
+                    });
+               });
+          } else {
+               console.error('❌ index.html NOT found at:', indexPath);
+               app.get('*', (req, res) => {
+                    res.status(500).json({
+                         error: 'Frontend build incomplete',
+                         message: 'index.html not found. Please rebuild the frontend.'
+                    });
+               });
+          }
+     } else {
+          console.error('❌ Frontend dist folder NOT found at:', frontendPath);
+          app.get('*', (req, res) => {
+               res.status(500).json({
+                    error: 'Frontend not built',
+                    message: 'Frontend dist folder not found. Please build the frontend first.'
+               });
+          });
+     }
 } else {
      // 404 handler for undefined routes in development
      app.use('*', notFoundHandler);
