@@ -164,10 +164,10 @@ const ResultsAnalytics = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Results & Analytics</h2>
-        <p className="text-gray-600">View exam results and student performance analytics</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Results & Analytics</h2>
+        <p className="text-sm sm:text-base text-gray-600">View exam results and student performance analytics</p>
       </div>
 
       {/* Filters */}
@@ -179,7 +179,7 @@ const ResultsAnalytics = () => {
               id="courseFilter"
               value={selectedCourse}
               onChange={(e) => handleCourseFilter(e.target.value)}
-              className="input-field"
+              className="input-field text-sm sm:text-base"
             >
               <option value="">All Courses</option>
               {courses.map((course) => (
@@ -196,7 +196,7 @@ const ResultsAnalytics = () => {
               id="examFilter"
               value={selectedExam}
               onChange={(e) => handleExamFilter(e.target.value)}
-              className="input-field"
+              className="input-field text-sm sm:text-base"
               disabled={!selectedCourse}
             >
               <option value="">All Exams</option>
@@ -210,27 +210,27 @@ const ResultsAnalytics = () => {
         </div>
       </div>
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-blue-600" />
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <div className="flex-shrink-0 mb-2 sm:mb-0">
+              <Users className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Attempts</p>
-              <p className="text-2xl font-bold text-gray-900">{statistics.totalAttempts}</p>
+            <div className="sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Attempts</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.totalAttempts}</p>
             </div>
           </div>
         </div>
 
         <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <BarChart3 className="h-8 w-8 text-green-600" />
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <div className="flex-shrink-0 mb-2 sm:mb-0">
+              <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Average Score</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Average Score</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">
                 {statistics.averageScore.toFixed(1)}%
               </p>
             </div>
@@ -238,13 +238,13 @@ const ResultsAnalytics = () => {
         </div>
 
         <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <FileText className="h-8 w-8 text-purple-600" />
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <div className="flex-shrink-0 mb-2 sm:mb-0">
+              <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completion Rate</p>
-              <p className="text-2xl font-bold text-gray-900">
+            <div className="sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Completion Rate</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">
                 {statistics.completionRate.toFixed(1)}%
               </p>
             </div>
@@ -252,13 +252,13 @@ const ResultsAnalytics = () => {
         </div>
 
         <div className="card">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <div className="flex-shrink-0 mb-2 sm:mb-0">
+              <AlertTriangle className="h-6 w-6 sm:h-8 sm:w-8 text-red-600" />
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Violations</p>
-              <p className="text-2xl font-bold text-gray-900">{statistics.violationCount}</p>
+            <div className="sm:ml-4">
+              <p className="text-xs sm:text-sm font-medium text-gray-600">Total Violations</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900">{statistics.violationCount}</p>
             </div>
           </div>
         </div>
@@ -267,9 +267,9 @@ const ResultsAnalytics = () => {
       {/* Results Table */}
       <div className="card">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Exam Results</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900">Exam Results</h3>
           {results.length > 0 && (
-            <p className="text-sm text-gray-600">
+            <p className="text-xs sm:text-sm text-gray-600">
               Showing {results.length} result{results.length !== 1 ? 's' : ''}
             </p>
           )}
@@ -289,88 +289,92 @@ const ResultsAnalytics = () => {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Exam
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Score
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Violations
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Submitted
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {results.map((result) => (
-                  <tr key={result.attemptId || result._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {result.student?.name || result.studentId?.name || 'Unknown Student'}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {result.student?.email || result.studentId?.email || 'No email'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {result.exam?.title || result.examId?.title || 'Unknown Exam'}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {result.exam?.course || result.examId?.courseId?.title || 'Unknown Course'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm font-medium ${getScoreColor(result.percentage || result.score || 0)}`}>
-                        {result.percentage !== undefined ? `${result.percentage}%` : result.score !== undefined ? `${result.score.toFixed(1)}%` : 'N/A'}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {result.answeredQuestions !== undefined && result.totalQuestions ? `${result.answeredQuestions}/${result.totalQuestions}` : result.answers?.length && result.totalQuestions ? `${result.answers.length}/${result.totalQuestions}` : 'N/A'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {getStatusBadge(result.status)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className={`text-sm font-medium ${result.violationCount > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        {result.violationCount || 0}
-                      </div>
-                      {result.violationCount > 0 && (
-                        <div className="text-xs text-gray-500">violations</div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {result.submittedAt ? (
-                        <div>
-                          <div className="flex items-center">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            {new Date(result.submittedAt).toLocaleDateString()}
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <div className="inline-block min-w-full align-middle">
+              <div className="overflow-hidden">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Student
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Exam
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Score
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Violations
+                      </th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Submitted
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {results.map((result) => (
+                      <tr key={result.attemptId || result._id} className="hover:bg-gray-50">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs sm:text-sm font-medium text-gray-900">
+                            {result.student?.name || result.studentId?.name || 'Unknown Student'}
                           </div>
-                          <div className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {new Date(result.submittedAt).toLocaleTimeString()}
+                          <div className="text-xs text-gray-500">
+                            {result.student?.email || result.studentId?.email || 'No email'}
                           </div>
-                        </div>
-                      ) : (
-                        'Not submitted'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs sm:text-sm text-gray-900">
+                            {result.exam?.title || result.examId?.title || 'Unknown Exam'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {result.exam?.course || result.examId?.courseId?.title || 'Unknown Course'}
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className={`text-xs sm:text-sm font-medium ${getScoreColor(result.percentage || result.score || 0)}`}>
+                            {result.percentage !== undefined ? `${result.percentage}%` : result.score !== undefined ? `${result.score.toFixed(1)}%` : 'N/A'}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {result.answeredQuestions !== undefined && result.totalQuestions ? `${result.answeredQuestions}/${result.totalQuestions}` : result.answers?.length && result.totalQuestions ? `${result.answers.length}/${result.totalQuestions}` : 'N/A'}
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          {getStatusBadge(result.status)}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className={`text-xs sm:text-sm font-medium ${result.violationCount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            {result.violationCount || 0}
+                          </div>
+                          {result.violationCount > 0 && (
+                            <div className="text-xs text-gray-500">violations</div>
+                          )}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">
+                          {result.submittedAt ? (
+                            <div>
+                              <div className="flex items-center">
+                                <Calendar className="h-3 w-3 mr-1" />
+                                {new Date(result.submittedAt).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {new Date(result.submittedAt).toLocaleTimeString()}
+                              </div>
+                            </div>
+                          ) : (
+                            'Not submitted'
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </div>
